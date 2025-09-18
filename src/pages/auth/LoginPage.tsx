@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Eye, EyeOff, User, Lock, Mail } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { apiService } from '../../services/apiService';
 import { Button, Input, Card, CardContent, LoadingOverlay } from '../../components/ui';
@@ -196,11 +196,11 @@ export default function LoginPage() {
       <Card className="w-full max-w-md animate-fade-in-up" variant="elevated">
         <CardContent className="p-8">
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-[#cc0000] rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <User className="w-8 h-8 text-white" />
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <img src="/256.png" alt="Rankor Logo" className="w-16 h-16 rounded-2xl" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-              Welcome to Ctecg Score
+              Welcome to Rankor
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
               Sign in to your account to continue

@@ -45,7 +45,7 @@ const AdminLayout = () => {
         <div className="h-16 flex items-center justify-start px-4 border-b border-gray-200 dark:border-gray-800">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center">
-              <img src="/256.png" alt="Score Logo" className="w-8 h-8" />
+              <img src="/256.png" alt="Rankor Logo" className="w-8 h-8" />
             </div>
             <span className="text-xl font-bold text-gray-900 dark:text-gray-100">
               Rankor

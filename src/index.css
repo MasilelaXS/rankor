@@ -2,7 +2,7 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Custom CSS properties for Ctecg Score design system */
+/* Custom CSS properties for Rankor design system */
 :root {
   /* Ctecg primary colors */
   --color-primary: #cc0000;
