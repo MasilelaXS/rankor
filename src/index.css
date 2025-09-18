@@ -1,0 +1,321 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Custom CSS properties for Ctecg Score design system */
+:root {
+  /* Ctecg primary colors */
+  --color-primary: #cc0000;
+  --color-primary-dark: #990000;
+  --color-primary-light: #ff3333;
+  --color-primary-muted: rgba(204, 0, 0, 0.1);
+  
+  /* Light mode colors */
+  --color-background: #ffffff;
+  --color-surface: #f5f5f7;
+  --color-surface-elevated: #ffffff;
+  --color-card: #ffffff;
+  --color-card-hover: #f9f9f9;
+  
+  /* Text colors */
+  --color-text-primary: #1d1d1f;
+  --color-text-secondary: #86868b;
+  --color-text-tertiary: #a1a1a6;
+  --color-text-inverse: #ffffff;
+  
+  /* Border colors */
+  --color-border: #d2d2d7;
+  --color-border-light: #e5e5e7;
+  --color-border-strong: #86868b;
+  
+  /* Status colors */
+  --color-success: #28a745;
+  --color-success-muted: rgba(40, 167, 69, 0.1);
+  --color-warning: #ffc107;
+  --color-warning-muted: rgba(255, 193, 7, 0.1);
+  --color-error: #dc3545;
+  --color-error-muted: rgba(220, 53, 69, 0.1);
+  --color-info: #17a2b8;
+  --color-info-muted: rgba(23, 162, 184, 0.1);
+  
+  /* Apple-inspired typography */
+  --font-family-system: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  
+  /* Apple-inspired shadows */
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s ease;
+}
+
+/* Dark mode colors */
+.dark {
+  --color-primary-muted: rgba(204, 0, 0, 0.2);
+  
+  /* Dark mode backgrounds */
+  --color-background: #000000;
+  --color-surface: #1c1c1e;
+  --color-surface-elevated: #2c2c2e;
+  --color-card: #1c1c1e;
+  --color-card-hover: #2c2c2e;
+  
+  /* Dark mode text */
+  --color-text-primary: #f5f5f7;
+  --color-text-secondary: #a1a1a6;
+  --color-text-tertiary: #86868b;
+  --color-text-inverse: #1d1d1f;
+  
+  /* Dark mode borders */
+  --color-border: #424245;
+  --color-border-light: #2c2c2e;
+  --color-border-strong: #a1a1a6;
+  
+  /* Dark mode status colors */
+  --color-success: #32d74b;
+  --color-success-muted: rgba(50, 215, 75, 0.15);
+  --color-warning: #ff9f0a;
+  --color-warning-muted: rgba(255, 159, 10, 0.15);
+  --color-error: #ff453a;
+  --color-error-muted: rgba(255, 69, 58, 0.15);
+  --color-info: #5ac8fa;
+  --color-info-muted: rgba(90, 200, 250, 0.15);
+  
+  /* Dark mode shadows */
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.15);
+}
+
+/* Base styles */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: var(--font-family-system);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  transition: var(--transition-normal);
+  font-family: var(--font-family-system);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-surface);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-strong);
+}
+
+/* Apple-inspired animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.4s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s ease-out;
+}
+
+/* Focus styles */
+.focus-ring {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-primary), 0 0 0 4px light-dark(white, black);
+}
+
+.focus-ring:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-primary), 0 0 0 4px light-dark(white, black);
+}
+
+/* Glass effect */
+.glass {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  background: light-dark(rgba(255, 255, 255, 0.8), rgba(28, 28, 30, 0.8));
+  border: 1px solid light-dark(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+}
+
+/* Button hover effects */
+.btn-hover {
+  transition: all 0.2s ease;
+}
+
+.btn-hover:hover {
+  transform: translateY(-1px);
+}
+
+.btn-hover:active {
+  transform: translateY(0);
+}
+
+/* Modal scrollable content - hide scrollbars while maintaining scroll functionality */
+.modal-scrollable-content {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+
+.modal-scrollable-content::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+  width: 0;
+  height: 0;
+}
+
+/* Mobile app specific styles */
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Mobile app specific utilities */
+.mobile-viewport {
+  height: 100vh;
+  height: 100dvh; /* Dynamic viewport height for mobile */
+}
+
+.mobile-scroll {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+}
+
+/* Safe area support for mobile devices */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-area-left {
+  padding-left: env(safe-area-inset-left);
+}
+
+.safe-area-right {
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hidden {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+
+/* Theme utility classes */
+.theme-card {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow);
+  transition: var(--transition-fast);
+}
+
+.theme-card:hover {
+  background-color: var(--color-card-hover);
+  box-shadow: var(--shadow-lg);
+}
+
+.theme-surface {
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+.theme-surface-elevated {
+  background-color: var(--color-surface-elevated);
+  color: var(--color-text-primary);
+}
+
+.theme-text-primary {
+  color: var(--color-text-primary);
+}
+
+.theme-text-secondary {
+  color: var(--color-text-secondary);
+}
+
+.theme-text-tertiary {
+  color: var(--color-text-tertiary);
+}
+
+.theme-border {
+  border-color: var(--color-border);
+}
+
+.theme-border-light {
+  border-color: var(--color-border-light);
+}
+
+.theme-shadow {
+  box-shadow: var(--shadow);
+}
+
+.theme-shadow-lg {
+  box-shadow: var(--shadow-lg);
+}
+
+.theme-transition {
+  transition: var(--transition-normal);
+}
