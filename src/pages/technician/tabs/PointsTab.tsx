@@ -115,7 +115,7 @@ const StatsCard = ({
 
 // Monthly Timeline Component
 const MonthlyTimeline = ({ timeline }: { timeline: MonthlyTimeline[] }) => {
-  const maxPoints = Math.max(...timeline.map(t => t.points_at_month_end));
+  const maxPoints = timeline.length > 0 ? Math.max(...timeline.map(t => t.points_at_month_end)) : 0;
   
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
@@ -226,10 +226,15 @@ export default function PointsTab() {
   }
 
   const { 
-    current_points, 
-    adjustments_history, 
-    monthly_timeline, 
-    current_month_adjustments
+    current_points = 0, 
+    adjustments_history = [], 
+    monthly_timeline = [], 
+    current_month_adjustments = {
+      total_adjustments: 0,
+      bonus_points: null,
+      penalty_points: null,
+      net_adjustment: null
+    }
   } = pointsData;
 
   return (
@@ -255,10 +260,10 @@ export default function PointsTab() {
         />
         <StatsCard
           title="This Month"
-          value={current_month_adjustments.net_adjustment}
+          value={current_month_adjustments.net_adjustment || '0'}
           subtitle="Net adjustment"
-          icon={current_month_adjustments.net_adjustment.startsWith('-') ? TrendingDown : TrendingUp}
-          color={current_month_adjustments.net_adjustment.startsWith('-') ? 'red' : 'green'}
+          icon={(current_month_adjustments.net_adjustment && current_month_adjustments.net_adjustment.toString().startsWith('-')) ? TrendingDown : TrendingUp}
+          color={(current_month_adjustments.net_adjustment && current_month_adjustments.net_adjustment.toString().startsWith('-')) ? 'red' : 'green'}
         />
       </div>
 
@@ -270,19 +275,19 @@ export default function PointsTab() {
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center">
             <p className="text-xl font-bold text-green-600 dark:text-green-400">
-              +{current_month_adjustments.bonus_points}
+              +{current_month_adjustments.bonus_points || '0'}
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400">Bonus Points</p>
           </div>
           <div className="text-center">
             <p className="text-xl font-bold text-red-600 dark:text-red-400">
-              {current_month_adjustments.penalty_points}
+              {current_month_adjustments.penalty_points || '0'}
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400">Penalties</p>
           </div>
           <div className="text-center">
             <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
-              {current_month_adjustments.total_adjustments}
+              {current_month_adjustments.total_adjustments || 0}
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400">Adjustments</p>
           </div>
