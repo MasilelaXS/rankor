@@ -3,24 +3,47 @@ import {
   Trophy,
   TrendingUp,
   Star,
-  Award,
   Users,
   RefreshCw,
-  Calendar,
-  Timer,
   Activity,
-  Zap
+  Zap,
+  Crown,
+  BarChart3,
+  TrendingDown
 } from 'lucide-react';
 import { apiService } from '../../services/apiService';
 import type { LeaderboardData } from '../../types/api';
 
+// Type for actual API response
+type ApiLeaderboardTechnician = {
+  id: number;
+  name: string;
+  overall_points: number;
+  current_month_points: number;
+  current_month_percentage: string;
+  current_month_ratings: number;
+  overall_rank: number;
+  monthly_rank: number;
+  points_growth: number;
+  percentage_growth: string;
+  performance_level?: string;
+  activity_level?: string;
+};
+
 const PublicLeaderboard = () => {
+  const [currentScreen, setCurrentScreen] = useState(0);
+  const [nextScreen, setNextScreen] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentTime, setCurrentTime] = useState(new Date());
+  
+  // Slideshow configuration
+  const SCREEN_DURATION = 300000; // 5 minutes per screen
+  const TOTAL_SCREENS = 4;
 
-  const fetchLeaderboard = async () => {
+  const fetchLeaderboard = async (isInitialLoad = false) => {
     try {
       setError(null);
       const data = await apiService.getPublicLeaderboard();
@@ -29,81 +52,43 @@ const PublicLeaderboard = () => {
       console.error('Failed to fetch public leaderboard:', err);
       setError('Failed to load leaderboard data');
     } finally {
-      setLoading(false);
+      // Only set loading to false on initial load
+      if (isInitialLoad) {
+        setLoading(false);
+      }
     }
   };
 
-  // Auto-refresh every 30 seconds
+  // Auto-refresh and slideshow management
   useEffect(() => {
-    fetchLeaderboard();
+    // Initial load with loading indicator
+    fetchLeaderboard(true);
     
-    const refreshInterval = setInterval(fetchLeaderboard, 30000);
+    // Update data every full cycle (4 screens × 5 minutes = 20 minutes) - silent updates
+    const FULL_CYCLE_DURATION = SCREEN_DURATION * TOTAL_SCREENS;
+    const refreshInterval = setInterval(() => fetchLeaderboard(false), FULL_CYCLE_DURATION);
+    
+    // Update time display every second
     const timeInterval = setInterval(() => setCurrentTime(new Date()), 1000);
+    
+    // Advance slideshow screen every 5 minutes with smooth transitions
+    const slideInterval = setInterval(() => {
+      setIsTransitioning(true);
+      setNextScreen(prev => (prev + 1) % TOTAL_SCREENS);
+      
+      // After transition animation starts, update current screen
+      setTimeout(() => {
+        setCurrentScreen(prevScreen => (prevScreen + 1) % TOTAL_SCREENS);
+        setIsTransitioning(false);
+      }, 500); // Half second transition
+    }, SCREEN_DURATION);
     
     return () => {
       clearInterval(refreshInterval);
       clearInterval(timeInterval);
+      clearInterval(slideInterval);
     };
-  }, []);
-
-  const getPerformanceIcon = (level: string) => {
-    switch (level) {
-      case 'excellent':
-        return <Trophy className="h-6 w-6 text-yellow-500" />;
-      case 'good':
-        return <Star className="h-6 w-6 text-blue-500" />;
-      case 'average':
-        return <Activity className="h-6 w-6 text-yellow-600" />;
-      case 'needs_improvement':
-        return <TrendingUp className="h-6 w-6 text-red-500" />;
-      default:
-        return <Award className="h-6 w-6 text-gray-500" />;
-    }
-  };
-
-  const getPerformanceGradient = (level: string) => {
-    switch (level) {
-      case 'excellent':
-        return 'from-yellow-400 to-yellow-600';
-      case 'good':
-        return 'from-blue-400 to-blue-600';
-      case 'average':
-        return 'from-yellow-500 to-orange-500';
-      case 'needs_improvement':
-        return 'from-red-400 to-red-600';
-      default:
-        return 'from-gray-400 to-gray-600';
-    }
-  };
-
-  const getRankDisplay = (position: number) => {
-    if (position === 1) {
-      return (
-        <div className="flex items-center justify-center w-16 h-16 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full shadow-lg">
-          <Trophy className="h-8 w-8 text-white" />
-        </div>
-      );
-    }
-    if (position === 2) {
-      return (
-        <div className="flex items-center justify-center w-14 h-14 bg-gradient-to-r from-gray-300 to-gray-500 rounded-full shadow-lg">
-          <Award className="h-7 w-7 text-white" />
-        </div>
-      );
-    }
-    if (position === 3) {
-      return (
-        <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full shadow-lg">
-          <Award className="h-6 w-6 text-white" />
-        </div>
-      );
-    }
-    return (
-      <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full shadow">
-        <span className="text-white font-bold text-lg">#{position}</span>
-      </div>
-    );
-  };
+  }, [SCREEN_DURATION, TOTAL_SCREENS]);
 
   if (loading) {
     return (
@@ -134,220 +119,343 @@ const PublicLeaderboard = () => {
     );
   }
 
-  const topThree = leaderboardData.leaderboard.slice(0, 3);
-  const remainingTechnicians = leaderboardData.leaderboard.slice(3);
+  // Prepare data for different screens
+  const allTechnicians = leaderboardData.leaderboard as unknown as ApiLeaderboardTechnician[];
+  const topThree = allTechnicians.slice(0, 3);
+  const lowerTier = allTechnicians.slice(8, 13); // Positions 9-13
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 text-white overflow-hidden">
+  // Screen Components
+  const renderTopThreeScreen = () => (
+    <div className="h-screen flex flex-col justify-center px-12 py-8">
       {/* Header */}
-      <div className="relative">
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div className="relative px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="bg-white/10 p-3 rounded-full backdrop-blur-sm">
-                <Trophy className="h-8 w-8 text-yellow-400" />
-              </div>
-              <div>
-                <h1 className="text-4xl font-bold tracking-tight">
-                  Technician Leaderboard
-                </h1>
-                <p className="text-xl text-blue-200">
-                  {leaderboardData.period.month_name} {leaderboardData.period.year}
-                  {leaderboardData.period.is_current_month && (
-                    <span className="ml-2 inline-flex items-center px-2 py-1 bg-green-500/20 text-green-300 rounded-full text-sm">
-                      <Zap className="h-3 w-3 mr-1" />
-                      Live
-                    </span>
-                  )}
-                </p>
+      <div className="text-center mb-12">
+        <div className="flex justify-center items-center mb-6">
+          <Trophy className="h-16 w-16 text-yellow-400 mr-4" />
+          <h1 className="text-6xl font-bold bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent">
+            TOP 3 CHAMPIONS
+          </h1>
+          <Trophy className="h-16 w-16 text-yellow-400 ml-4" />
+        </div>
+        <p className="text-2xl text-blue-200">This Month's Elite Performers</p>
+      </div>
+
+      {/* Clean Top 3 Display */}
+      <div className="grid grid-cols-3 gap-8 max-w-5xl mx-auto">
+        {/* First Place - Center */}
+        {topThree[0] && (
+          <div className="order-2 text-center">
+            <div className="relative">
+              <div className="bg-gradient-to-br from-yellow-400 via-yellow-500 to-yellow-600 rounded-2xl p-8 mb-6 shadow-2xl transform hover:scale-105 transition-all duration-300">
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                  <Crown className="h-12 w-12 text-white drop-shadow-lg" />
+                </div>
+                <div className="mt-4">
+                  <div className="text-6xl font-bold text-white mb-2">1ST</div>
+                  <h3 className="text-2xl font-bold text-white mb-4">{topThree[0].name}</h3>
+                  <div className="bg-white/20 rounded-lg p-4 backdrop-blur-sm">
+                    <div className="text-4xl font-bold text-white mb-1">{topThree[0].current_month_points}</div>
+                    <div className="text-lg text-yellow-100">Points • {topThree[0].current_month_percentage}%</div>
+                    <div className="text-sm text-yellow-200 mt-2">{topThree[0].current_month_ratings} ratings</div>
+                  </div>
+                </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Second Place - Left */}
+        {topThree[1] && (
+          <div className="order-1 text-center">
+            <div className="bg-gradient-to-br from-gray-400 via-gray-500 to-gray-600 rounded-2xl p-6 mb-6 shadow-xl">
+              <div className="text-4xl font-bold text-white mb-2">2ND</div>
+              <h3 className="text-xl font-bold text-white mb-4">{topThree[1].name}</h3>
+              <div className="bg-white/20 rounded-lg p-3 backdrop-blur-sm">
+                <div className="text-3xl font-bold text-white mb-1">{topThree[1].current_month_points}</div>
+                <div className="text-base text-gray-200">{topThree[1].current_month_percentage}%</div>
+                <div className="text-sm text-gray-300 mt-1">{topThree[1].current_month_ratings} ratings</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Third Place - Right */}
+        {topThree[2] && (
+          <div className="order-3 text-center">
+            <div className="bg-gradient-to-br from-orange-400 via-orange-500 to-orange-600 rounded-2xl p-6 mb-6 shadow-xl">
+              <div className="text-4xl font-bold text-white mb-2">3RD</div>
+              <h3 className="text-xl font-bold text-white mb-4">{topThree[2].name}</h3>
+              <div className="bg-white/20 rounded-lg p-3 backdrop-blur-sm">
+                <div className="text-3xl font-bold text-white mb-1">{topThree[2].current_month_points}</div>
+                <div className="text-base text-orange-200">{topThree[2].current_month_percentage}%</div>
+                <div className="text-sm text-orange-300 mt-1">{topThree[2].current_month_ratings} ratings</div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="text-center mt-12">
+        <div className="text-2xl text-blue-200 mb-2">🎉 Outstanding Performance! 🎉</div>
+        <div className="text-lg text-blue-300">Leading the way in customer satisfaction</div>
+      </div>
+    </div>
+  );
+
+  const renderPerformanceChartScreen = () => {
+    // Show positions 4+ (remaining technicians after top 3) with proper bounds checking
+    const chartData = allTechnicians.slice(3); // Get all remaining after top 3
+    const startPosition = 4;
+    const endPosition = Math.min(startPosition + chartData.length - 1, allTechnicians.length);
+    
+    return (
+      <div className="h-screen flex flex-col justify-center px-6 py-4">
+        {/* Header */}
+        <div className="text-center mb-4">
+          <div className="flex justify-center items-center mb-2">
+            <BarChart3 className="h-8 w-8 text-blue-400 mr-3" />
+            <h1 className="text-3xl font-bold">PERFORMANCE RANKINGS</h1>
+          </div>
+          <p className="text-lg text-blue-200">
+            Positions {startPosition}-{endPosition} • Current Month Performance
+          </p>
+        </div>
+
+        {/* Three Column Grid Layout - Left to Right, Then Next Row */}
+        <div className="grid grid-cols-3 gap-3 max-w-7xl mx-auto w-full">
+          {chartData.map((tech, index) => {
+            const position = index + 4;
+            const isImproving = (tech.points_growth || 0) > 0;
             
-            <div className="text-right">
-              <div className="flex items-center space-x-6 text-lg">
-                <div className="flex items-center space-x-2">
-                  <Users className="h-5 w-5 text-blue-300" />
-                  <span>{leaderboardData.summary.total_active_technicians} Technicians</span>
+            return (
+              <div key={tech.id} className="bg-white/10 rounded-lg p-3 backdrop-blur-sm flex items-center space-x-3">
+                {/* Position Badge */}
+                <div className="bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg w-10 h-10 flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm font-bold text-white">{position}</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Star className="h-5 w-5 text-yellow-300" />
-                  <span>{leaderboardData.summary.total_ratings_this_month} Ratings</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Timer className="h-5 w-5 text-green-300" />
-                  <span>{currentTime.toLocaleTimeString()}</span>
+                
+                {/* Technician Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <h3 className="text-base font-bold text-white truncate">{tech.name}</h3>
+                    <div className="text-right flex-shrink-0">
+                      <div className="text-base font-bold text-blue-400">{tech.current_month_points}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center space-x-2 text-blue-200">
+                      <Star className="h-3 w-3" />
+                      <span>{tech.current_month_ratings}</span>
+                      {isImproving ? (
+                        <TrendingUp className="h-3 w-3 text-green-400" />
+                      ) : (
+                        <TrendingDown className="h-3 w-3 text-red-400" />
+                      )}
+                      <span className={isImproving ? 'text-green-400' : 'text-red-400'}>
+                        {Math.abs(tech.points_growth || 0)}
+                      </span>
+                    </div>
+                    <span className="text-gray-300">{tech.current_month_percentage}%</span>
+                  </div>
                 </div>
               </div>
-              <div className="mt-2 text-blue-200">
-                <div className="flex items-center justify-end space-x-2">
-                  <RefreshCw className="h-4 w-4" />
-                  <span className="text-sm">Auto-refresh every 30s</span>
-                </div>
-              </div>
-            </div>
+            );
+          })}
+        </div>
+
+        <div className="text-center mt-4">
+          <div className="text-base text-blue-200">
+            <Activity className="inline h-4 w-4 mr-2" />
+            Showing {chartData.length} of {allTechnicians.length} technicians • Live updates
           </div>
         </div>
       </div>
+    );
+  };
 
-      {/* Top 3 Podium */}
-      {topThree.length > 0 && (
-        <div className="px-8 py-12">
-          <div className="max-w-6xl mx-auto">
-            <div className="flex items-end justify-center space-x-8 mb-12">
-              {/* 2nd Place */}
-              {topThree[1] && (
-                <div className="text-center transform -translate-y-4">
-                  <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-2xl">
-                    <div className="flex justify-center mb-4">
-                      {getRankDisplay(2)}
-                    </div>
-                    <h3 className="text-xl font-bold mb-2">{topThree[1].name}</h3>
-                    <div className="space-y-2">
-                      <div className="bg-white/10 rounded-lg p-3">
-                        <div className="text-2xl font-bold text-yellow-400">{topThree[1].points_this_month}</div>
-                        <div className="text-sm text-gray-300">Points</div>
-                      </div>
-                      <div className="bg-white/10 rounded-lg p-3">
-                        <div className="text-lg font-semibold">{topThree[1].avg_percentage_this_month}%</div>
-                        <div className="text-sm text-gray-300">Average</div>
-                      </div>
-                    </div>
-                    <div className="mt-4 flex justify-center">
-                      {getPerformanceIcon(topThree[1].performance_level)}
+  const renderRankingsTableScreen = () => (
+    <div className="h-screen flex flex-col justify-center px-8 py-6">
+      {/* Header */}
+      <div className="text-center mb-8">
+        <h1 className="text-4xl font-bold mb-4">COMPLETE RANKINGS</h1>
+        <p className="text-xl text-blue-200">Positions 9 and below</p>
+      </div>
+
+      {/* Rankings Grid */}
+      <div className="grid grid-cols-2 gap-6 max-w-6xl mx-auto">
+        {lowerTier.map((tech, index) => {
+          const position = index + 9;
+          const isImproving = tech.points_growth > 0;
+          
+          return (
+            <div key={tech.id} className="bg-white/10 rounded-xl p-6 backdrop-blur-sm">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="bg-gradient-to-r from-gray-500 to-gray-600 rounded-full w-10 h-10 flex items-center justify-center font-bold">
+                    {position}
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold">{tech.name}</h3>
+                    <div className="flex items-center space-x-2 text-sm text-gray-300">
+                      <span>{tech.current_month_ratings} ratings</span>
+                      <span>•</span>
+                      <span>{tech.current_month_percentage}%</span>
                     </div>
                   </div>
                 </div>
-              )}
-
-              {/* 1st Place */}
-              <div className="text-center">
-                <div className="bg-gradient-to-r from-yellow-400/20 to-yellow-600/20 backdrop-blur-sm rounded-2xl p-8 border border-yellow-400/30 shadow-2xl transform scale-110">
-                  <div className="flex justify-center mb-6">
-                    {getRankDisplay(1)}
-                  </div>
-                  <h3 className="text-2xl font-bold mb-4">{topThree[0].name}</h3>
-                  <div className="space-y-3">
-                    <div className="bg-gradient-to-r from-yellow-400/20 to-yellow-600/20 rounded-lg p-4">
-                      <div className="text-3xl font-bold text-yellow-400">{topThree[0].points_this_month}</div>
-                      <div className="text-sm text-yellow-200">Points This Month</div>
-                    </div>
-                    <div className="bg-white/10 rounded-lg p-4">
-                      <div className="text-xl font-semibold">{topThree[0].avg_percentage_this_month}%</div>
-                      <div className="text-sm text-gray-300">Average Rating</div>
-                    </div>
-                    <div className="bg-white/10 rounded-lg p-4">
-                      <div className="text-lg font-semibold">{topThree[0].ratings_this_month}</div>
-                      <div className="text-sm text-gray-300">Ratings Received</div>
-                    </div>
-                  </div>
-                  <div className="mt-6 flex justify-center">
-                    <Trophy className="h-8 w-8 text-yellow-400" />
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-blue-400">{tech.current_month_points}</div>
+                  <div className={`flex items-center text-sm ${isImproving ? 'text-green-400' : 'text-red-400'}`}>
+                    {isImproving ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                    <span className="ml-1">{isImproving ? '+' : ''}{tech.points_growth}</span>
                   </div>
                 </div>
               </div>
-
-              {/* 3rd Place */}
-              {topThree[2] && (
-                <div className="text-center transform -translate-y-8">
-                  <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-2xl">
-                    <div className="flex justify-center mb-4">
-                      {getRankDisplay(3)}
-                    </div>
-                    <h3 className="text-xl font-bold mb-2">{topThree[2].name}</h3>
-                    <div className="space-y-2">
-                      <div className="bg-white/10 rounded-lg p-3">
-                        <div className="text-2xl font-bold text-orange-400">{topThree[2].points_this_month}</div>
-                        <div className="text-sm text-gray-300">Points</div>
-                      </div>
-                      <div className="bg-white/10 rounded-lg p-3">
-                        <div className="text-lg font-semibold">{topThree[2].avg_percentage_this_month}%</div>
-                        <div className="text-sm text-gray-300">Average</div>
-                      </div>
-                    </div>
-                    <div className="mt-4 flex justify-center">
-                      {getPerformanceIcon(topThree[2].performance_level)}
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
-          </div>
+          );
+        })}
+      </div>
+
+      <div className="text-center mt-8 text-blue-200">
+        <Activity className="inline h-5 w-5 mr-2" />
+        Keep up the great work! Every rating counts.
+      </div>
+    </div>
+  );
+
+  const renderSummaryScreen = () => (
+    <div className="h-screen flex flex-col justify-center px-8 py-6">
+      {/* Header */}
+      <div className="text-center mb-8">
+        <h1 className="text-4xl font-bold mb-4">MONTHLY HIGHLIGHTS</h1>
+        <p className="text-xl text-blue-200">Monthly Summary</p>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-3 gap-8 max-w-6xl mx-auto mb-8">
+        <div className="bg-white/10 rounded-xl p-8 text-center backdrop-blur-sm">
+          <Users className="h-12 w-12 text-blue-400 mx-auto mb-4" />
+          <div className="text-4xl font-bold text-white mb-2">{allTechnicians.length}</div>
+          <div className="text-lg text-blue-200">Total Technicians</div>
         </div>
-      )}
 
-      {/* Remaining Rankings */}
-      {remainingTechnicians.length > 0 && (
-        <div className="px-8 pb-12">
-          <div className="max-w-6xl mx-auto">
-            <h2 className="text-2xl font-bold mb-6 text-center">Complete Rankings</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {remainingTechnicians.map((technician) => (
-                <div
-                  key={technician.id}
-                  className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 hover:bg-white/15 transition-all duration-300"
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className="flex-shrink-0">
-                      {getRankDisplay(technician.rank_position)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-lg truncate">{technician.name}</h3>
-                      <div className="flex items-center space-x-4 mt-2">
-                        <div className="text-center">
-                          <div className="text-xl font-bold text-blue-400">{technician.points_this_month}</div>
-                          <div className="text-xs text-gray-400">Points</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-lg font-semibold">{technician.avg_percentage_this_month}%</div>
-                          <div className="text-xs text-gray-400">Average</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-lg font-semibold">{technician.ratings_this_month}</div>
-                          <div className="text-xs text-gray-400">Ratings</div>
-                        </div>
-                      </div>
-                      <div className="mt-3 flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          {getPerformanceIcon(technician.performance_level)}
-                          <span className="text-sm capitalize text-gray-300">
-                            {technician.performance_level.replace('_', ' ')}
-                          </span>
-                        </div>
-                        <div className={`text-xs px-2 py-1 rounded-full bg-gradient-to-r ${getPerformanceGradient(technician.performance_level)}`}>
-                          {technician.activity_level.replace('_', ' ')}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+        <div className="bg-white/10 rounded-xl p-8 text-center backdrop-blur-sm">
+          <Activity className="h-12 w-12 text-green-400 mx-auto mb-4" />
+          <div className="text-4xl font-bold text-white mb-2">{allTechnicians.filter(t => t.current_month_ratings > 0).length}</div>
+          <div className="text-lg text-green-200">Active This Month</div>
         </div>
-      )}
 
-      {/* Footer */}
-      <div className="bg-black/20 px-8 py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-6">
-            <div className="text-sm text-gray-300">
-              Overall Team Performance: <span className="font-semibold text-white">{leaderboardData.summary.overall_avg_percentage}%</span>
+        <div className="bg-white/10 rounded-xl p-8 text-center backdrop-blur-sm">
+          <Star className="h-12 w-12 text-yellow-400 mx-auto mb-4" />
+          <div className="text-4xl font-bold text-white mb-2">{allTechnicians.reduce((sum, t) => sum + t.current_month_ratings, 0)}</div>
+          <div className="text-lg text-yellow-200">Total Ratings</div>
+        </div>
+      </div>
+
+      {/* Most Improved */}
+      {(() => {
+        const mostImproved = allTechnicians.reduce((prev, current) => 
+          (current.points_growth > prev.points_growth) ? current : prev
+        );
+        return mostImproved.points_growth > 0 && (
+          <div className="bg-gradient-to-r from-green-600 to-green-500 rounded-xl p-8 max-w-4xl mx-auto text-center">
+            <div className="flex justify-center items-center mb-4">
+              <TrendingUp className="h-8 w-8 text-white mr-3" />
+              <h2 className="text-3xl font-bold text-white">Most Improved</h2>
+              <TrendingUp className="h-8 w-8 text-white ml-3" />
             </div>
-            <div className="text-sm text-gray-300">
-              Total Points Awarded: <span className="font-semibold text-white">{leaderboardData.summary.total_points_awarded}</span>
-            </div>
+            <h3 className="text-4xl font-bold text-white mb-2">{mostImproved.name}</h3>
+            <p className="text-xl text-green-100">
+              +{mostImproved.points_growth} points improvement • {mostImproved.percentage_growth}% growth
+            </p>
           </div>
-          <div className="text-sm text-gray-400">
-            <div className="flex items-center space-x-2">
-              <Calendar className="h-4 w-4" />
-              <span>Updated: {new Date().toLocaleString()}</span>
-            </div>
+        );
+      })()}
+
+      <div className="text-center mt-8 text-blue-200">
+        <RefreshCw className="inline h-5 w-5 mr-2" />
+        Updated live • Next refresh in {Math.ceil(30 - (Date.now() % 30000) / 1000)}s
+      </div>
+    </div>
+  );
+
+  // Screen Selector
+  const renderScreen = (screenIndex: number) => {
+    switch (screenIndex) {
+      case 0:
+        return renderTopThreeScreen();
+      case 1:
+        return renderPerformanceChartScreen();
+      case 2:
+        return renderRankingsTableScreen();
+      case 3:
+        return renderSummaryScreen();
+      default:
+        return renderTopThreeScreen();
+    }
+  };
+
+  const renderCurrentScreen = () => {
+    return renderScreen(currentScreen);
+  };
+
+  return (
+    <div className="h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 text-white overflow-hidden">
+      {/* Slideshow Content */}
+      <div className="relative h-full">
+        {/* Screen Indicator */}
+        <div className="absolute top-6 right-6 z-10 flex space-x-2">
+          {[...Array(TOTAL_SCREENS)].map((_, index) => (
+            <div
+              key={index}
+              className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                index === currentScreen 
+                  ? 'bg-white shadow-lg' 
+                  : 'bg-white/40'
+              }`}
+            />
+          ))}
+        </div>
+
+        {/* Screen Content with Smooth Transitions */}
+        <div className="relative h-full overflow-hidden">
+          {/* Current Screen */}
+          <div 
+            className={`absolute inset-0 transition-all duration-1000 ease-in-out transform ${
+              isTransitioning ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
+            }`}
+          >
+            {renderCurrentScreen()}
           </div>
+          
+          {/* Next Screen (during transition) */}
+          {isTransitioning && (
+            <div 
+              className={`absolute inset-0 transition-all duration-1000 ease-in-out transform ${
+                isTransitioning ? 'opacity-100 scale-100' : 'opacity-0 scale-105'
+              }`}
+            >
+              {renderScreen(nextScreen)}
+            </div>
+          )}
+        </div>
+
+        {/* Live Status Indicator */}
+        <div className="absolute bottom-6 left-6 flex items-center space-x-2 bg-black/20 rounded-full px-4 py-2 backdrop-blur-sm">
+          <Zap className="h-4 w-4 text-green-400 animate-pulse" />
+          <span className="text-sm text-green-300">LIVE</span>
+          <span className="text-sm text-white">•</span>
+          <span className="text-sm text-white">{currentTime.toLocaleTimeString()}</span>
+        </div>
+
+        {/* Auto-advance indicator */}
+        <div className="absolute bottom-6 right-6 flex items-center space-x-2 bg-black/20 rounded-full px-4 py-2 backdrop-blur-sm">
+          <Activity className="h-4 w-4 text-blue-400" />
+          <span className="text-sm text-blue-300">Screen {currentScreen + 1} of {TOTAL_SCREENS}</span>
         </div>
       </div>
     </div>
   );
 };
-
 export default PublicLeaderboard;
