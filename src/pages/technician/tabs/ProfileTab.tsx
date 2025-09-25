@@ -9,8 +9,11 @@ import {
   Trophy,
   Target,
   AlertTriangle,
-  Badge
+  Badge,
+  RotateCcw,
+  Activity
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useTechnicianStore } from '../../../stores/technicianStore';
 import type { PerformanceStatus, RecentPerformance } from '../../../types/api';
 
@@ -23,35 +26,35 @@ const PerformanceStatusBadge = ({ status }: { status: PerformanceStatus }) => {
           bg: 'bg-green-100 dark:bg-green-900/30',
           text: 'text-green-800 dark:text-green-300',
           icon: Trophy,
-          label: '🌟 Excellent'
+          label: 'Excellent'
         };
       case 'good':
         return {
           bg: 'bg-blue-100 dark:bg-blue-900/30',
           text: 'text-blue-800 dark:text-blue-300',
           icon: TrendingUp,
-          label: '👍 Good'
+          label: 'Good'
         };
       case 'average':
         return {
           bg: 'bg-yellow-100 dark:bg-yellow-900/30',
           text: 'text-yellow-800 dark:text-yellow-300',
           icon: Target,
-          label: '⚖️ Average'
+          label: 'Average'
         };
       case 'needs_improvement':
         return {
           bg: 'bg-red-100 dark:bg-red-900/30',
           text: 'text-red-800 dark:text-red-300',
           icon: AlertTriangle,
-          label: '⚠️ Needs Improvement'
+          label: 'Needs Improvement'
         };
       default:
         return {
           bg: 'bg-gray-100 dark:bg-gray-900/30',
           text: 'text-gray-800 dark:text-gray-300',
           icon: User,
-          label: '🆕 Building History'
+          label: 'Building History'
         };
     }
   };
@@ -125,12 +128,12 @@ const BadgeCard = ({
   title, 
   description, 
   earned, 
-  icon 
+  icon: IconComponent 
 }: {
   title: string;
   description: string;
   earned: boolean;
-  icon: string;
+  icon: LucideIcon;
 }) => {
   return (
     <div className={`rounded-xl p-4 border ${
@@ -139,7 +142,11 @@ const BadgeCard = ({
         : 'bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-700'
     }`}>
       <div className="flex items-center mb-2">
-        <span className="text-2xl mr-3">{icon}</span>
+        <IconComponent className={`h-6 w-6 mr-3 ${
+          earned 
+            ? 'text-yellow-600 dark:text-yellow-400' 
+            : 'text-gray-400 dark:text-gray-500'
+        }`} />
         <div className="flex-1">
           <h4 className={`font-semibold ${
             earned 
@@ -295,28 +302,28 @@ export default function ProfileTab() {
       key: 'top_performer',
       title: 'Top Performer',
       description: '85%+ average with 3+ ratings',
-      icon: '🎯',
+      icon: Target,
       earned: badges.top_performer
     },
     {
       key: 'has_excellent_rating',
       title: 'Excellent Rating',
       description: '90%+ average rating',
-      icon: '⭐',
+      icon: Star,
       earned: badges.has_excellent_rating
     },
     {
       key: 'consistent_performer',
       title: 'Consistent Performer',
       description: '75%+ over 2+ months',
-      icon: '🔄',
+      icon: RotateCcw,
       earned: badges.consistent_performer
     },
     {
       key: 'active_technician',
       title: 'Active Technician',
       description: '5+ total ratings',
-      icon: '💪',
+      icon: Activity,
       earned: badges.active_technician
     }
   ];

@@ -150,7 +150,9 @@ const PublicLeaderboard = () => {
                   <Crown className="h-12 w-12 text-white drop-shadow-lg" />
                 </div>
                 <div className="mt-4">
-                  <div className="text-6xl font-bold text-white mb-2">1ST</div>
+                  <div className="flex items-center justify-center mb-2">
+                    <Trophy className="h-16 w-16 text-white" />
+                  </div>
                   <h3 className="text-2xl font-bold text-white mb-4">{topThree[0].name}</h3>
                   <div className="bg-white/20 rounded-lg p-4 backdrop-blur-sm">
                     <div className="text-4xl font-bold text-white mb-1">{topThree[0].current_month_points}</div>
@@ -167,7 +169,9 @@ const PublicLeaderboard = () => {
         {topThree[1] && (
           <div className="order-1 text-center">
             <div className="bg-gradient-to-br from-gray-400 via-gray-500 to-gray-600 rounded-2xl p-6 mb-6 shadow-xl">
-              <div className="text-4xl font-bold text-white mb-2">2ND</div>
+              <div className="flex items-center justify-center mb-2">
+                <Users className="h-12 w-12 text-white" />
+              </div>
               <h3 className="text-xl font-bold text-white mb-4">{topThree[1].name}</h3>
               <div className="bg-white/20 rounded-lg p-3 backdrop-blur-sm">
                 <div className="text-3xl font-bold text-white mb-1">{topThree[1].current_month_points}</div>
@@ -182,7 +186,9 @@ const PublicLeaderboard = () => {
         {topThree[2] && (
           <div className="order-3 text-center">
             <div className="bg-gradient-to-br from-orange-400 via-orange-500 to-orange-600 rounded-2xl p-6 mb-6 shadow-xl">
-              <div className="text-4xl font-bold text-white mb-2">3RD</div>
+              <div className="flex items-center justify-center mb-2">
+                <Star className="h-12 w-12 text-white" />
+              </div>
               <h3 className="text-xl font-bold text-white mb-4">{topThree[2].name}</h3>
               <div className="bg-white/20 rounded-lg p-3 backdrop-blur-sm">
                 <div className="text-3xl font-bold text-white mb-1">{topThree[2].current_month_points}</div>
@@ -196,7 +202,11 @@ const PublicLeaderboard = () => {
 
       {/* Footer */}
       <div className="text-center mt-12">
-        <div className="text-2xl text-blue-200 mb-2">🎉 Outstanding Performance! 🎉</div>
+        <div className="flex items-center justify-center text-2xl text-blue-200 mb-2">
+          <Trophy className="h-8 w-8 mr-3 text-yellow-400" />
+          <span>Outstanding Performance!</span>
+          <Trophy className="h-8 w-8 ml-3 text-yellow-400" />
+        </div>
         <div className="text-lg text-blue-300">Leading the way in customer satisfaction</div>
       </div>
     </div>

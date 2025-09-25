@@ -230,7 +230,10 @@ body {
 /* Mobile app specific utilities */
 .mobile-viewport {
   height: 100vh;
-  height: 100dvh; /* Dynamic viewport height for mobile */
+  /* Fallback for browsers that don't support dvh */
+  height: 100svh; /* Small viewport height - more reliable for PWAs */
+  /* Use CSS custom property for dynamic adjustment */
+  height: var(--app-height, 100vh);
 }
 
 .mobile-scroll {

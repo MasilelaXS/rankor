@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { 
   Home, 
@@ -218,6 +218,28 @@ const TechnicianMobileApp = () => {
     fetchLeaderboardData, 
     fetchProfileData 
   } = useTechnicianStore();
+
+  // Fix viewport height for PWA apps where dvh doesn't work properly
+  useEffect(() => {
+    const setAppHeight = () => {
+      document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
+    };
+
+    // Set initial height
+    setAppHeight();
+
+    // Update height on resize/orientation change
+    window.addEventListener('resize', setAppHeight);
+    window.addEventListener('orientationchange', () => {
+      // Small delay to ensure orientation change is complete
+      setTimeout(setAppHeight, 100);
+    });
+
+    return () => {
+      window.removeEventListener('resize', setAppHeight);
+      window.removeEventListener('orientationchange', setAppHeight);
+    };
+  }, []);
 
   const getTabTitle = (tab: string) => {
     switch (tab) {
