@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Ca
 import { MetricCard } from '../../components/ui/MetricCard';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
-import { LoadingSpinner } from '../../components/ui/Loading';
+import { CenteredLoading } from '../../components/ui/CenteredLoading';
 
 const AdminDashboardHome = () => {
   const { 
@@ -29,16 +29,7 @@ const AdminDashboardHome = () => {
   }, [fetchDashboardData]);
 
   if (isDashboardLoading) {
-    return (
-      <div className="p-8 flex items-center justify-center min-h-96">
-        <div className="text-center">
-          <LoadingSpinner size="lg" />
-          <p className="text-gray-600 dark:text-gray-400 mt-4">
-            Loading dashboard...
-          </p>
-        </div>
-      </div>
-    );
+    return <CenteredLoading message="Loading dashboard..." />;
   }
 
   if (error) {

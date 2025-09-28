@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Ca
 import { Badge } from '../../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/Table';
 import { Modal } from '../../components/ui/Modal';
+import { CenteredLoading } from '../../components/ui/CenteredLoading';
 
 interface TechnicianFormData {
   name: string;
@@ -143,16 +144,7 @@ const TechniciansPage: React.FC = () => {
   };
 
   if (isTechniciansLoading) {
-    return (
-      <div className="p-6">
-        <div className="flex items-center justify-center min-h-64">
-          <div className="text-center space-y-4">
-            <div className="w-8 h-8 border-4 border-[#cc0000] border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <p className="text-gray-600 dark:text-gray-400">Loading technicians...</p>
-          </div>
-        </div>
-      </div>
-    );
+    return <CenteredLoading message="Loading technicians..." />;
   }
 
   return (

@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAdminStore } from '../../stores/adminStore';
-import { Button, Card, CardContent, Modal, Input, Badge } from '../../components/ui';
+import { Button, Card, CardContent, Modal, Input, Badge, CenteredLoading } from '../../components/ui';
 import { Textarea } from '../../components/ui';
-import type { TechnicianRating, PointAdjustment } from '../../types/api';
+import { apiService } from '../../services/apiService';
+import type { TechnicianRating, PointAdjustment, RatingLinkResultsData } from '../../types/api';
 import { 
   Star,
   Clock,
@@ -21,7 +22,11 @@ import {
   MessageSquare,
   Trophy,
   Target,
-  Filter
+  Filter,
+  Mail,
+  Building,
+  Phone,
+  Award
 } from 'lucide-react';
 
 interface FilterState {
@@ -78,6 +83,18 @@ export default function TechnicianPerformancePage() {
   });
   const [pointHistory, setPointHistory] = useState<PointAdjustment[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
+  // Rating results modal state
+  const [ratingResultsModal, setRatingResultsModal] = useState<{
+    isOpen: boolean;
+    ratingLinkId: number | null;
+  }>({
+    isOpen: false,
+    ratingLinkId: null
+  });
+  const [ratingResults, setRatingResults] = useState<RatingLinkResultsData | null>(null);
+  const [isLoadingResults, setIsLoadingResults] = useState(false);
+  const [resultsError, setResultsError] = useState<string | null>(null);
 
   // Form states
   const [overrideForm, setOverrideForm] = useState({
@@ -202,6 +219,31 @@ export default function TechnicianPerformancePage() {
   const closeModal = () => {
     setOverrideModal({ rating: null, technicianId: 0, technicianName: '', type: 'override', isOpen: false });
     setPointHistoryModal({ technicianId: 0, technicianName: '', isOpen: false });
+  };
+
+  const closeRatingResultsModal = () => {
+    setRatingResultsModal({ isOpen: false, ratingLinkId: null });
+    setRatingResults(null);
+    setResultsError(null);
+  };
+
+  const fetchRatingResults = useCallback(async (ratingLinkId: number) => {
+    setIsLoadingResults(true);
+    setResultsError(null);
+    
+    try {
+      const data = await apiService.getAdminRatingLinkResults(ratingLinkId);
+      setRatingResults(data);
+    } catch (err) {
+      setResultsError((err as Error).message || 'Failed to fetch rating results');
+    } finally {
+      setIsLoadingResults(false);
+    }
+  }, []);
+
+  const openRatingResultsModal = (ratingLinkId: number) => {
+    setRatingResultsModal({ isOpen: true, ratingLinkId });
+    fetchRatingResults(ratingLinkId);
   };
 
   const formatDate = (dateString: string) => {
@@ -379,10 +421,7 @@ export default function TechnicianPerformancePage() {
 
       {/* Technician Performance List */}
       {isTechnicianRatingsLoading ? (
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#cc0000] mx-auto"></div>
-          <p className="text-gray-600 dark:text-gray-400 mt-4">Loading performance data...</p>
-        </div>
+        <CenteredLoading message="Loading performance data..." />
       ) : filteredTechnicianRatings.length === 0 ? (
         <Card className="border-0 shadow-sm">
           <CardContent className="p-12 text-center">
@@ -584,8 +623,18 @@ export default function TechnicianPerformancePage() {
                                   <Button
                                     variant="outline"
                                     size="sm"
+                                    onClick={() => openRatingResultsModal(rating.rating_link_id)}
+                                    className="hover:bg-blue-600 hover:text-white hover:border-blue-600"
+                                    title="View Rating Details"
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
                                     onClick={() => openOverrideModal(rating, techRating.technician_id, techRating.technician_name, 'override')}
                                     className="hover:bg-[#cc0000] hover:text-white hover:border-[#cc0000]"
+                                    title="Override Rating Points"
                                   >
                                     <Settings className="h-4 w-4" />
                                   </Button>
@@ -732,10 +781,7 @@ export default function TechnicianPerformancePage() {
       >
         <div className="space-y-4">
           {isLoadingHistory ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#cc0000] mx-auto"></div>
-              <p className="text-gray-600 dark:text-gray-400 mt-2">Loading history...</p>
-            </div>
+            <CenteredLoading message="Loading history..." className="py-8" />
           ) : pointHistory.length === 0 ? (
             <div className="text-center py-8">
               <Clock className="h-8 w-8 text-gray-400 mx-auto mb-2" />
@@ -776,6 +822,262 @@ export default function TechnicianPerformancePage() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+      </Modal>
+
+      {/* Rating Link Results Modal */}
+      <Modal
+        isOpen={ratingResultsModal.isOpen}
+        onClose={closeRatingResultsModal}
+        title="Rating Details"
+        size="xl"
+      >
+        <div className="max-h-[80vh] overflow-y-auto">
+          {isLoadingResults && (
+            <CenteredLoading message="Loading rating details..." className="py-8" />
+          )}
+
+          {resultsError && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                <p className="text-red-800 dark:text-red-200">{resultsError}</p>
+              </div>
+            </div>
+          )}
+
+          {ratingResults && !isLoadingResults && (
+            <div className="space-y-6">
+              {/* Header with Client Info */}
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                        {ratingResults.rating_link.client_name}
+                      </h3>
+                      <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-4 w-4" />
+                          <span>{ratingResults.rating_link.client_email}</span>
+                        </div>
+                        {ratingResults.rating_link.client_code && (
+                          <div className="flex items-center gap-2">
+                            <Building className="h-4 w-4" />
+                            <span>Code: {ratingResults.rating_link.client_code}</span>
+                          </div>
+                        )}
+                        {ratingResults.rating_link.client_contact && (
+                          <div className="flex items-center gap-2">
+                            <Phone className="h-4 w-4" />
+                            <span>{ratingResults.rating_link.client_contact}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-col items-end gap-2">
+                      {ratingResults.rating_link.used ? (
+                        <Badge variant="success" className="flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3" />
+                          Completed
+                        </Badge>
+                      ) : (
+                        <Badge variant="warning" className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          Pending
+                        </Badge>
+                      )}
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        Created: {formatDate(ratingResults.rating_link.created_at)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Technicians */}
+                  <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Assigned Technicians</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {ratingResults.rating_link.technicians.map((tech) => (
+                        <div key={tech.id} className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 rounded-lg px-3 py-1">
+                          <User className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                          <span className="text-sm text-gray-900 dark:text-white">{tech.name}</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">({tech.employee_id})</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Rating Results */}
+              {ratingResults.rating_results ? (
+                <>
+                  {/* Score Summary */}
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <div className="text-center">
+                          <div className="flex items-center justify-center mb-2">
+                            <Target className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                          </div>
+                          <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                            {ratingResults.rating_results.total_score}/{ratingResults.rating_results.max_score}
+                          </div>
+                          <div className="text-sm text-gray-600 dark:text-gray-400">Total Score</div>
+                        </div>
+
+                        <div className="text-center">
+                          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full mb-2 bg-blue-50 dark:bg-blue-900/20">
+                            <TrendingUp className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                          </div>
+                          <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                            {ratingResults.rating_results.percentage.toFixed(1)}%
+                          </div>
+                          <div className="text-sm text-gray-600 dark:text-gray-400">Percentage</div>
+                        </div>
+
+                        <div className="text-center">
+                          <div className="flex items-center justify-center mb-2">
+                            <Trophy className="h-8 w-8 text-green-600 dark:text-green-400" />
+                          </div>
+                          <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                            {ratingResults.rating_results.points_awarded_final !== null 
+                              ? ratingResults.rating_results.points_awarded_final 
+                              : ratingResults.rating_results.points_awarded_auto}
+                          </div>
+                          <div className="text-sm text-gray-600 dark:text-gray-400">Points Awarded</div>
+                        </div>
+
+                        <div className="text-center">
+                          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full mb-2 bg-green-50 dark:bg-green-900/20">
+                            {ratingResults.analysis?.is_passing ? (
+                              <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400" />
+                            ) : (
+                              <XCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
+                            )}
+                          </div>
+                          <div className={`text-lg font-bold ${ratingResults.analysis?.is_passing ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                            {ratingResults.analysis?.is_passing ? 'Passed' : 'Failed'}
+                          </div>
+                          <div className="text-sm text-gray-600 dark:text-gray-400">
+                            Pass Rate: {ratingResults.system_settings.pass_percentage}%
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
+                        Submitted on {formatDate(ratingResults.rating_results.submitted_at)}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Question Breakdown */}
+                  <Card>
+                    <CardContent className="p-6">
+                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Question Breakdown</h4>
+                      <div className="space-y-4">
+                        {ratingResults.rating_results.question_answers.map((qa, index) => (
+                          <div key={qa.question_id} className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
+                            <div className="space-y-3">
+                              <div>
+                                <h5 className="font-medium text-gray-900 dark:text-white">
+                                  {index + 1}. {qa.question_text}
+                                </h5>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  <Star
+                                    key={star}
+                                    className={`h-5 w-5 ${
+                                      star <= qa.score
+                                        ? 'text-yellow-400 fill-current'
+                                        : 'text-gray-300 dark:text-gray-600'
+                                    }`}
+                                  />
+                                ))}
+                                <span className="ml-2 text-base font-medium text-gray-900 dark:text-white">
+                                  {qa.score}/5 Stars
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Client Comments */}
+                  {ratingResults.rating_results.comments && (
+                    <Card>
+                      <CardContent className="p-6">
+                        <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                          <MessageSquare className="h-5 w-5" />
+                          Client Feedback
+                        </h4>
+                        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                          <p className="text-gray-800 dark:text-gray-200 italic">
+                            "{ratingResults.rating_results.comments}"
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Admin Override Info */}
+                  {ratingResults.rating_results.admin_override_reason && (
+                    <Card>
+                      <CardContent className="p-6">
+                        <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                          <Award className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                          Admin Override
+                        </h4>
+                        <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4 border border-amber-200 dark:border-amber-800">
+                          <div className="space-y-2">
+                            <p className="text-amber-900 dark:text-amber-100">
+                              <span className="font-medium">Reason:</span> {ratingResults.rating_results.admin_override_reason}
+                            </p>
+                            <div className="text-sm text-amber-700 dark:text-amber-300">
+                              Points changed from {ratingResults.rating_results.points_awarded_auto} to {ratingResults.rating_results.points_awarded_final}
+                              {ratingResults.rating_results.admin_override_at && (
+                                <> • {formatDate(ratingResults.rating_results.admin_override_at)}</>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </>
+              ) : (
+                /* No Results Yet - Show Available Questions */
+                ratingResults.available_questions && (
+                  <Card>
+                    <CardContent className="p-6">
+                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                        Available Questions (Not Yet Rated)
+                      </h4>
+                      <div className="space-y-3">
+                        {ratingResults.available_questions.map((question, index) => (
+                          <div key={question.id} className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3">
+                            <p className="text-gray-800 dark:text-gray-200">
+                              {index + 1}. {question.question_text}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                        <p className="text-yellow-800 dark:text-yellow-200 text-sm">
+                          <AlertTriangle className="h-4 w-4 inline mr-1" />
+                          This rating link has not been used yet. No results are available until the client submits their rating.
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              )}
             </div>
           )}
         </div>

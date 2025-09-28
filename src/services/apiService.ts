@@ -18,6 +18,7 @@ import type {
   EnhancedOverrideRatingRequest,
   AdjustPointsRequest,
   PointHistoryResponse,
+  RatingLinkResultsData,
   TechnicianMobileDashboard,
   TechnicianPointsData,
   TechnicianLeaderboardData,
@@ -503,6 +504,20 @@ class ApiService {
     return this.request<LeaderboardData>(url, {
       method: 'GET',
     });
+  }
+
+  // ============== RATING LINK RESULTS ENDPOINTS ==============
+
+  async getAdminRatingLinkResults(id: number): Promise<RatingLinkResultsData> {
+    return this.request<RatingLinkResultsData>(`/admin/rating-links/${id}/results`, {
+      method: 'GET',
+    }, true);
+  }
+
+  async getTechnicianRatingLinkResults(id: number): Promise<RatingLinkResultsData> {
+    return this.request<RatingLinkResultsData>(`/technician/rating-links/${id}/results`, {
+      method: 'GET',
+    }, true);
   }
 }
 

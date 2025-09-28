@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAdminStore } from '../../stores/adminStore';
-import { Button, Card, CardContent, Modal, Input, Badge } from '../../components/ui';
+import { Button, Card, CardContent, Modal, Input, Badge, CenteredLoading } from '../../components/ui';
 import { Textarea } from '../../components/ui';
 import type { Rating, PointAdjustment } from '../../types/api';
 import { 
@@ -242,10 +242,7 @@ export default function AllRatingsPage() {
 
       {/* Ratings List */}
       {isRatingsLoading ? (
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#cc0000] mx-auto"></div>
-          <p className="text-gray-600 dark:text-gray-400 mt-4">Loading ratings...</p>
-        </div>
+        <CenteredLoading message="Loading ratings..." />
       ) : filteredRatings.length === 0 ? (
         <Card className="border-0 shadow-sm">
           <CardContent className="p-12 text-center">
@@ -630,10 +627,7 @@ export default function AllRatingsPage() {
       >
         <div className="space-y-4">
           {isLoadingHistory ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#cc0000] mx-auto"></div>
-              <p className="text-gray-600 dark:text-gray-400 mt-2">Loading history...</p>
-            </div>
+            <CenteredLoading message="Loading history..." className="py-8" />
           ) : pointHistory.length === 0 ? (
             <div className="text-center py-8">
               <Clock className="h-8 w-8 text-gray-400 mx-auto mb-2" />

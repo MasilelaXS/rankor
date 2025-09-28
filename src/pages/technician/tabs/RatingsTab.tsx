@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Star, 
   Calendar, 
@@ -10,7 +11,13 @@ import { useTechnicianStore } from '../../../stores/technicianStore';
 import type { Rating } from '../../../types/api';
 
 // Rating Card Component
-const RatingCard = ({ rating }: { rating: Rating }) => {
+const RatingCard = ({ 
+  rating, 
+  onClick 
+}: { 
+  rating: Rating; 
+  onClick: (ratingLinkId: number) => void;
+}) => {
   const percentage = parseFloat(rating.percentage);
   const ratingValue = Math.round(percentage / 20); // Convert percentage to 1-5 scale
   
@@ -22,7 +29,10 @@ const RatingCard = ({ rating }: { rating: Rating }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-4">
+    <div 
+      className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-4 cursor-pointer hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600 transition-all duration-200"
+      onClick={() => onClick(rating.rating_link_id)}
+    >
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
           <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
@@ -38,38 +48,37 @@ const RatingCard = ({ rating }: { rating: Rating }) => {
         </div>
       </div>
       
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center">
+      {/* Star Rating - Mobile Optimized Layout */}
+      <div className="mb-3">
+        <div className="flex items-center mb-2">
           {[1, 2, 3, 4, 5].map((star) => (
             <Star
               key={star}
-              className={`h-4 w-4 ${
+              className={`h-5 w-5 ${
                 star <= ratingValue
                   ? 'text-yellow-400 fill-current'
                   : 'text-gray-300 dark:text-gray-600'
               }`}
             />
           ))}
-          <span className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
-            {ratingValue}/5
+          <span className="ml-2 text-base font-medium text-gray-900 dark:text-gray-100">
+            {ratingValue}/5 Stars
           </span>
         </div>
         
-        {rating.points_awarded_final !== null ? (
-          <div className="flex items-center">
-            <span className="text-xs text-gray-500 dark:text-gray-400 mr-1">Points:</span>
-            <span className="text-sm font-medium text-green-600 dark:text-green-400">
+        {/* Points Section - Below Rating */}
+        <div className="flex items-center">
+          <span className="text-sm text-gray-500 dark:text-gray-400 mr-2">Points Earned:</span>
+          {rating.points_awarded_final !== null ? (
+            <span className="text-sm font-semibold text-green-600 dark:text-green-400">
               +{rating.points_awarded_final}
             </span>
-          </div>
-        ) : (
-          <div className="flex items-center">
-            <span className="text-xs text-gray-500 dark:text-gray-400 mr-1">Points:</span>
-            <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
+          ) : (
+            <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
               +{rating.points_awarded_auto}
             </span>
-          </div>
-        )}
+          )}
+        </div>
       </div>
       
       {rating.comments && (
@@ -173,6 +182,7 @@ const RatingsFilters = ({
 };
 
 export default function RatingsTab() {
+  const navigate = useNavigate();
   const { 
     ratings, 
     ratingsPagination,
@@ -199,6 +209,10 @@ export default function RatingsTab() {
         ...filters 
       });
     }
+  };
+
+  const handleRatingClick = (ratingLinkId: number) => {
+    navigate(`/technician/rating/${ratingLinkId}`);
   };
 
   if (isRatingsLoading && ratings.length === 0) {
@@ -247,7 +261,11 @@ export default function RatingsTab() {
       {ratings.length > 0 ? (
         <div>
           {ratings.map((rating) => (
-            <RatingCard key={rating.id} rating={rating} />
+            <RatingCard 
+              key={rating.id} 
+              rating={rating} 
+              onClick={handleRatingClick}
+            />
           ))}
           
           {/* Load More Button */}

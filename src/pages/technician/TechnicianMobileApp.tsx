@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
+import RatingDetailsPage from './RatingDetailsPage';
 import { 
   Home, 
   Star, 
@@ -331,6 +332,7 @@ const TechnicianMobileApp = () => {
 export default function TechnicianDashboard() {
   return (
     <Routes>
+      <Route path="/rating/:ratingLinkId" element={<RatingDetailsPage />} />
       <Route path="/*" element={<TechnicianMobileApp />} />
     </Routes>
   );

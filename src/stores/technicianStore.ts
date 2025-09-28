@@ -6,7 +6,8 @@ import type {
   TechnicianLeaderboardData,
   TechnicianProfileData,
   Rating,
-  RatingsResponse 
+  RatingsResponse,
+  RatingLinkResultsData
 } from '../types/api';
 
 interface TechnicianState {
@@ -60,6 +61,7 @@ interface TechnicianActions {
   setRatings: (data: RatingsResponse) => void;
   setRatingsLoading: (loading: boolean) => void;
   fetchRatings: (params?: { page?: number; limit?: number; start_date?: string; end_date?: string }) => Promise<void>;
+  getRatingLinkResults: (ratingLinkId: number) => Promise<RatingLinkResultsData>;
   
   // Error actions
   setError: (error: string | null) => void;
@@ -167,6 +169,17 @@ export const useTechnicianStore = create<TechnicianStore>((set) => ({
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to fetch ratings';
       set({ error: message, isRatingsLoading: false });
+    }
+  },
+
+  getRatingLinkResults: async (ratingLinkId) => {
+    try {
+      const data = await apiService.getTechnicianRatingLinkResults(ratingLinkId);
+      return data;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to fetch rating link results';
+      set({ error: message });
+      throw error;
     }
   },
 

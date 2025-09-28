@@ -6,6 +6,7 @@ import { Select } from '../../components/ui/Select';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
+import { CenteredLoading } from '../../components/ui/CenteredLoading';
 import { useAdminStore } from '../../stores/adminStore';
 import type { CreateRatingLinkRequest, RatingLink } from '../../types/api';
 
@@ -291,9 +292,7 @@ const RatingLinksPage: React.FC = () => {
         </CardHeader>
         <CardContent>
           {isRatingLinksLoading ? (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#cc0000]"></div>
-            </div>
+            <CenteredLoading message="Loading rating links..." className="py-8" />
           ) : filteredLinks.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full">

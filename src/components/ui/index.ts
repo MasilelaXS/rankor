@@ -19,4 +19,9 @@ export { MetricCard } from './MetricCard';
 
 export { LoadingSpinner, LoadingPage, LoadingOverlay } from './Loading';
 
+export { CenteredLoading } from './CenteredLoading';
+
+export { Select } from './Select';
+export type { SelectProps } from './Select';
+
 export { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from './Table';

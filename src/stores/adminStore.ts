@@ -103,6 +103,7 @@ interface AdminActions {
   overrideRatingPoints: (id: number, data: EnhancedOverrideRatingRequest) => Promise<void>;
   adjustTechnicianPoints: (technicianId: number, data: AdjustPointsRequest) => Promise<void>;
   getTechnicianPointHistory: (technicianId: number, params?: { page?: number; limit?: number }) => Promise<PointHistoryResponse>;
+  getRatingLinkResults: (ratingLinkId: number) => Promise<import('../types/api').RatingLinkResultsData>;
   
   // Technician Rating actions
   setTechnicianRatings: (data: TechnicianRatingsResponse) => void;
@@ -565,6 +566,17 @@ export const useAdminStore = create<AdminStore>((set) => ({
       return data;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to fetch point history';
+      set({ error: message });
+      throw error;
+    }
+  },
+
+  getRatingLinkResults: async (ratingLinkId) => {
+    try {
+      const data = await apiService.getAdminRatingLinkResults(ratingLinkId);
+      return data;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to fetch rating link results';
       set({ error: message });
       throw error;
     }
